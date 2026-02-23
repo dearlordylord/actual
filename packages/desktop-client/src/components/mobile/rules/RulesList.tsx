@@ -58,28 +58,26 @@ export function RulesList({
             paddingBottom: MOBILE_NAV_HEIGHT,
           }}
           renderEmptyState={() =>
-            !isLoading && (
-              <View
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme.mobilePageBackground,
+              }}
+            >
+              <Text
                 style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: theme.mobilePageBackground,
+                  fontSize: 15,
+                  color: theme.pageTextSubdued,
+                  textAlign: 'center',
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: theme.pageTextSubdued,
-                    textAlign: 'center',
-                  }}
-                >
-                  <Trans>
-                    No rules found. Create your first rule to get started!
-                  </Trans>
-                </Text>
-              </View>
-            )
+                <Trans>
+                  No rules found. Create your first rule to get started!
+                </Trans>
+              </Text>
+            </View>
           }
         >
           {rule => (

@@ -62,26 +62,24 @@ export function PayeesList({
           }}
           dependencies={[ruleCounts, isRuleCountsLoading]}
           renderEmptyState={() =>
-            !isLoading && (
-              <View
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme.mobilePageBackground,
+              }}
+            >
+              <Text
                 style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: theme.mobilePageBackground,
+                  fontSize: 15,
+                  color: theme.pageTextSubdued,
+                  textAlign: 'center',
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: theme.pageTextSubdued,
-                    textAlign: 'center',
-                  }}
-                >
-                  <Trans>No payees found</Trans>
-                </Text>
-              </View>
-            )
+                <Trans>No payees found.</Trans>
+              </Text>
+            </View>
           }
         >
           {payee => (
