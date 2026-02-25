@@ -638,10 +638,18 @@ export const fullSync = once(async function (): Promise<
 
   const tables = getTablesFromMessages(messages);
 
+  const messageCountResult = db.runQuery<{ count: number }>(
+    'SELECT COUNT(*) as count FROM messages_crdt',
+    [],
+    true,
+  );
+  const messageCount = messageCountResult[0]?.count ?? 0;
+
   app.events.emit('sync', {
     type: 'success',
     tables,
     syncDisabled: checkSyncingMode('disabled'),
+    messageCount,
   });
   return { messages };
 });

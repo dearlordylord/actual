@@ -80,6 +80,7 @@ export type LocalPrefs = Partial<{
   'budget.showHiddenCategories': boolean;
   'budget.startMonth': string;
   'flags.updateNotificationShownForVersion': string;
+  'flags.syncPerformanceNotificationDismissed': boolean;
   'schedules.showCompleted': boolean;
   reportsViewLegend: boolean;
   reportsViewSummary: boolean;

@@ -59,6 +59,42 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         );
       }
 
+      if (
+        event.type === 'success' &&
+        event.messageCount != null &&
+        event.messageCount > 20000
+      ) {
+        const budgetId = prefs?.id;
+        const dismissedKey = `${budgetId}-flags.syncPerformanceNotificationDismissed`;
+        const dismissed = localStorage.getItem(dismissedKey);
+
+        if (!dismissed || dismissed !== 'true') {
+          store.dispatch(
+            addNotification({
+              notification: {
+                type: 'message',
+                title: t('Sync performance issue'),
+                message: t(
+                  'Your budget has {{messageCount}} sync messages which may cause slow performance. Resetting sync will clear old messages and speed things up.',
+                  { messageCount: event.messageCount.toLocaleString() },
+                ),
+                sticky: true,
+                id: 'sync-performance',
+                button: {
+                  title: t('Reset sync'),
+                  action: () => {
+                    void store.dispatch(resetSync());
+                  },
+                },
+                onClose: () => {
+                  localStorage.setItem(dismissedKey, JSON.stringify(true));
+                },
+              },
+            }),
+          );
+        }
+      }
+
       const tables = event.tables;
 
       if (tables.includes('prefs')) {

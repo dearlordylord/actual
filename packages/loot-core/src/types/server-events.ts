@@ -30,6 +30,7 @@ type SyncEvent = {
       type: 'success';
       tables: string[];
       syncDisabled?: boolean;
+      messageCount?: number;
     }
   | {
       type: 'error';
