@@ -115,6 +115,8 @@ export function ActionableGridListItem<T extends object>({
             padding: 16,
             textAlign: 'left',
             borderRadius: 0,
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
           }}
           onClick={handleAction}
         >
