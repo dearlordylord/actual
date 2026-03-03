@@ -4,11 +4,12 @@ import type { PropsWithChildren } from 'react';
 import { useSchedules } from './useSchedules';
 import type { UseSchedulesProps, UseSchedulesResult } from './useSchedules';
 
-type SchedulesContextValue = UseSchedulesResult;
+type SchedulesContextValue = Pick<
+  UseSchedulesResult,
+  'data' | 'isLoading' | 'error'
+>;
 
-const SchedulesContext = createContext<SchedulesContextValue | undefined>(
-  undefined,
-);
+const SchedulesContext = createContext<SchedulesContextValue | null>(null);
 
 type SchedulesProviderProps = PropsWithChildren<UseSchedulesProps>;
 
@@ -16,9 +17,10 @@ export function SchedulesProvider({
   children,
   ...props
 }: SchedulesProviderProps) {
-  const data = useSchedules(props);
+  const { isLoading, data, error } = useSchedules(props);
+
   return (
-    <SchedulesContext.Provider value={data}>
+    <SchedulesContext.Provider value={{ data, isLoading, error }}>
       {children}
     </SchedulesContext.Provider>
   );
