@@ -1,34 +1,31 @@
 import { exec } from 'node:child_process';
-import { existsSync, writeFile } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { exit } from 'node:process';
 
 import prompts from 'prompts';
 
 async function run() {
-  const username = await execAsync(
-    "gh api user --jq '.login'",
-    'To avoid having to enter your username, consider installing the official GitHub CLI (https://github.com/cli/cli) and logging in with `gh auth login`.',
-  );
-  const activePr = await getActivePr(username);
-  if (activePr) {
+  const hasGhCli = await checkGhCli();
+  const username = hasGhCli ? await execAsync("gh api user --jq '.login'") : '';
+
+  if (!username) {
     console.log(
-      `Found potentially matching PR ${activePr.number}: ${activePr.title}`,
+      'Tip: Install the GitHub CLI (https://github.com/cli/cli) and run `gh auth login` to enable auto-detection of your username and auto-creation of draft PRs.',
     );
   }
-  const initialPrNumber = activePr?.number ?? (await getNextPrNumber());
 
-  const result = await prompts([
+  const activePr = await getActivePr(username);
+  if (activePr) {
+    console.log(`Found existing PR #${activePr.number}: ${activePr.title}`);
+  }
+
+  // Ask for category and summary first (before PR number)
+  const initial = await prompts([
     {
       name: 'githubUsername',
       message: 'Comma-separated GitHub username(s)',
       type: 'text',
       initial: username,
-    },
-    {
-      name: 'pullRequestNumber',
-      message: 'PR Number',
-      type: 'number',
-      initial: initialPrNumber,
     },
     {
       name: 'releaseNoteType',
@@ -50,28 +47,65 @@ async function run() {
   ]);
 
   if (
-    !result.githubUsername ||
-    !result.oneLineSummary ||
-    !result.releaseNoteType ||
-    !result.pullRequestNumber
+    !initial.githubUsername ||
+    !initial.oneLineSummary ||
+    initial.releaseNoteType === undefined
   ) {
     console.log('All questions must be answered. Exiting');
     exit(1);
   }
 
+  // Determine PR number: use existing PR, offer to create draft, or ask manually
+  let prNumber: number;
+
+  if (activePr) {
+    prNumber = activePr.number;
+  } else if (hasGhCli) {
+    const { action } = await prompts({
+      name: 'action',
+      message: 'No existing PR found. How would you like to get the PR number?',
+      type: 'select',
+      choices: [
+        {
+          title: '🚀 Create a draft PR automatically',
+          value: 'create-draft',
+          description:
+            'Creates a draft PR using the GitHub CLI and uses its number',
+        },
+        {
+          title: '✏️  Enter PR number manually',
+          value: 'manual',
+          description: 'Enter a PR number you already know',
+        },
+      ],
+    });
+
+    if (!action) {
+      console.log('Exiting');
+      exit(1);
+    }
+
+    if (action === 'create-draft') {
+      prNumber = await createDraftPr(initial.oneLineSummary);
+    } else {
+      prNumber = await askForPrNumber();
+    }
+  } else {
+    prNumber = await askForPrNumber();
+  }
+
   const fileContents = getFileContents(
-    result.releaseNoteType,
-    result.githubUsername,
-    result.oneLineSummary,
+    initial.releaseNoteType,
+    initial.githubUsername,
+    initial.oneLineSummary,
   );
-  const prNumber = result.pullRequestNumber;
 
   const filepath = `./upcoming-release-notes/${prNumber}.md`;
   if (existsSync(filepath)) {
     const { confirm } = await prompts({
       name: 'confirm',
       type: 'confirm',
-      message: `This will overwrite the existing release note ${filepath} Are you sure?`,
+      message: `This will overwrite the existing release note ${filepath}. Are you sure?`,
     });
     if (!confirm) {
       console.log('Exiting');
@@ -79,14 +113,79 @@ async function run() {
     }
   }
 
-  writeFile(filepath, fileContents, err => {
-    if (err) {
-      console.error('Failed to write release note file:', err);
+  writeFileSync(filepath, fileContents);
+  console.log(`Release note generated successfully: ${filepath}`);
+}
+
+async function checkGhCli(): Promise<boolean> {
+  const result = await execAsync('gh --version');
+  return result !== '';
+}
+
+async function createDraftPr(title: string): Promise<number> {
+  // Ensure current branch is pushed to remote
+  const branchName = await execAsync('git rev-parse --abbrev-ref HEAD');
+  if (!branchName || branchName === 'master' || branchName === 'main') {
+    console.error(
+      'Cannot create a draft PR from the main/master branch. Please switch to a feature branch first.',
+    );
+    exit(1);
+  }
+
+  console.log(`Pushing branch "${branchName}" to remote...`);
+  const pushResult = await execAsync(
+    `git push -u origin ${branchName} 2>&1`,
+    'Failed to push branch to remote. Please push manually first.',
+  );
+  if (pushResult === '') {
+    // execAsync returns '' on error
+    exit(1);
+  }
+
+  console.log('Creating draft PR...');
+  const prUrl = await execAsync(
+    `gh pr create --draft --title "${title.replace(/"/g, '\\"')}" --body "" 2>&1`,
+    'Failed to create draft PR. Please create one manually via GitHub.',
+  );
+
+  if (!prUrl) {
+    exit(1);
+  }
+
+  // Extract PR number from URL (e.g., https://github.com/owner/repo/pull/1234)
+  const prNumberMatch = prUrl.match(/\/pull\/(\d+)/);
+  if (!prNumberMatch) {
+    // gh pr create might return just a number or other format
+    const numberMatch = prUrl.match(/(\d+)/);
+    if (!numberMatch) {
+      console.error('Could not parse PR number from output:', prUrl);
       exit(1);
-    } else {
-      console.log(`Release note generated successfully: ${filepath}`);
     }
+    const prNumber = parseInt(numberMatch[1], 10);
+    console.log(`Draft PR #${prNumber} created: ${prUrl.trim()}`);
+    return prNumber;
+  }
+
+  const prNumber = parseInt(prNumberMatch[1], 10);
+  console.log(`Draft PR #${prNumber} created: ${prUrl.trim()}`);
+  return prNumber;
+}
+
+async function askForPrNumber(): Promise<number> {
+  const nextPrNumber = await getNextPrNumber();
+  const { pullRequestNumber } = await prompts({
+    name: 'pullRequestNumber',
+    message: 'PR Number',
+    type: 'number',
+    initial: nextPrNumber,
   });
+
+  if (!pullRequestNumber) {
+    console.log('PR number is required. Exiting');
+    exit(1);
+  }
+
+  return pullRequestNumber;
 }
 
 // makes an attempt to find an existing open PR from <username>:<branch>
@@ -169,7 +268,9 @@ async function execAsync(cmd: string, errorLog?: string): Promise<string> {
   return new Promise<string>(res => {
     exec(cmd, (error, stdout) => {
       if (error) {
-        console.log(errorLog);
+        if (errorLog) {
+          console.log(errorLog);
+        }
         res('');
       } else {
         res(stdout.trim());
