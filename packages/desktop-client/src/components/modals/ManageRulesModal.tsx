@@ -19,11 +19,11 @@ export function ManageRulesModal({ payeeId }: ManageRulesModalProps) {
 
   return (
     <Modal name="manage-rules">
-      {({ state: { close } }) => (
+      {({ state }) => (
         <>
           <ModalHeader
             title={t('Rules')}
-            rightContent={<ModalCloseButton onPress={close} />}
+            rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <ManageRules isModal payeeId={payeeId} />
         </>

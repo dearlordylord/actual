@@ -16,7 +16,7 @@
     "e2e": "npx playwright test --browser=chromium",
     "vrt": "cross-env VRT=true npx playwright test --browser=chromium",
     "playwright": "playwright",
-    "typecheck": "tsc --noEmit && tsc-strict"
+    "typecheck": "tsc -b && tsc-strict"
   },
   "devDependencies": {
     "@actual-app/components": "workspace:*",
@@ -97,7 +97,6 @@
     "uuid": "^13.0.0",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18",
     "xml2js": "^0.6.2"
   }

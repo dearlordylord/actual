@@ -25,7 +25,7 @@ import type {
 import { copy, exists, mkdir, remove } from 'fs-extra';
 import promiseRetry from 'promise-retry';
 
-import type { GlobalPrefsJson } from '../loot-core/src/types/prefs';
+import type { GlobalPrefsJson } from 'loot-core/src/types/prefs';
 
 import { getMenu } from './menu';
 import {
@@ -420,8 +420,10 @@ async function createWindow() {
   clientWin = win;
 
   // Execute queued logs - displaying them in the client window
-  queuedClientWinLogs.map((log: string) =>
-    win.webContents.executeJavaScript(log),
+  void Promise.all(
+    queuedClientWinLogs.map((log: string) =>
+      win.webContents.executeJavaScript(log),
+    ),
   );
 
   queuedClientWinLogs = [];
