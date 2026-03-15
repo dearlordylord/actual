@@ -1,5 +1,4 @@
 import * as api from '@actual-app/api';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveConfig } from './config';
 import { withConnection } from './connection';

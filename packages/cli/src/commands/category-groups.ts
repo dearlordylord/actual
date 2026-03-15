@@ -62,10 +62,7 @@ export function registerCategoryGroupsCommand(program: Command) {
   groups
     .command('delete <id>')
     .description('Delete a category group')
-    .option(
-      '--transfer-to <id>',
-      'Transfer category groups to this category group',
-    )
+    .option('--transfer-to <id>', 'Transfer transactions to this category ID')
     .action(async (id: string, cmdOpts) => {
       const opts = program.opts();
       await withConnection(opts, async () => {

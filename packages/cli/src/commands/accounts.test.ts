@@ -1,6 +1,5 @@
 import * as api from '@actual-app/api';
 import { Command } from 'commander';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { printOutput } from '../output';
 

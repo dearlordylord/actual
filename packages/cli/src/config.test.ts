@@ -1,8 +1,6 @@
 import { homedir } from 'os';
 import { join } from 'path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { resolveConfig } from './config';
 
 const mockSearch = vi.fn().mockResolvedValue(null);
