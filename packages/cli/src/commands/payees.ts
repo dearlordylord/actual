@@ -46,15 +46,15 @@ export function registerPayeesCommand(program: Command) {
     .description('Update a payee')
     .option('--name <name>', 'New payee name')
     .action(async (id: string, cmdOpts) => {
+      const fields: Record<string, unknown> = {};
+      if (cmdOpts.name) fields.name = cmdOpts.name;
+      if (Object.keys(fields).length === 0) {
+        throw new Error(
+          'No fields to update. Use --name to specify a new name.',
+        );
+      }
       const opts = program.opts();
       await withConnection(opts, async () => {
-        const fields: Record<string, unknown> = {};
-        if (cmdOpts.name) fields.name = cmdOpts.name;
-        if (Object.keys(fields).length === 0) {
-          throw new Error(
-            'No fields to update. Use --name to specify a new name.',
-          );
-        }
         await api.updatePayee(id, fields);
         printOutput({ success: true, id }, opts.format);
       });
@@ -77,12 +77,17 @@ export function registerPayeesCommand(program: Command) {
     .requiredOption('--target <id>', 'Target payee ID')
     .requiredOption('--ids <ids>', 'Comma-separated payee IDs to merge')
     .action(async (cmdOpts: { target: string; ids: string }) => {
+      const mergeIds = cmdOpts.ids
+        .split(',')
+        .map(id => id.trim())
+        .filter(id => id.length > 0);
+      if (mergeIds.length === 0) {
+        throw new Error(
+          'No valid payee IDs provided in --ids. Provide comma-separated IDs.',
+        );
+      }
       const opts = program.opts();
       await withConnection(opts, async () => {
-        const mergeIds = cmdOpts.ids
-          .split(',')
-          .map(id => id.trim())
-          .filter(id => id.length > 0);
         await api.mergePayees(cmdOpts.target, mergeIds);
         printOutput({ success: true }, opts.format);
       });

@@ -15,7 +15,12 @@ function buildQueryFromFile(
   fallbackTable: string | undefined,
 ) {
   const table = typeof parsed.table === 'string' ? parsed.table : fallbackTable;
-  let queryObj = api.q(table || 'transactions');
+  if (!table) {
+    throw new Error(
+      '--table is required when the input file lacks a "table" field',
+    );
+  }
+  let queryObj = api.q(table);
   if (Array.isArray(parsed.select)) queryObj = queryObj.select(parsed.select);
   if (isRecord(parsed.filter)) queryObj = queryObj.filter(parsed.filter);
   if (Array.isArray(parsed.orderBy)) {

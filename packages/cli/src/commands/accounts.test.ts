@@ -32,7 +32,7 @@ function createProgram(): Command {
   program.option('--session-token <token>');
   program.option('--budget-id <id>');
   program.option('--data-dir <dir>');
-  program.option('--quiet');
+  program.option('--verbose');
   program.exitOverride();
   registerAccountsCommand(program);
   return program;
@@ -121,6 +121,60 @@ describe('accounts commands', () => {
       expect(printOutput).toHaveBeenCalledWith(
         { success: true, id: 'acct-1' },
         undefined,
+      );
+    });
+
+    it('passes offbudget true', async () => {
+      await run([
+        'accounts',
+        'update',
+        'acct-1',
+        '--name',
+        'X',
+        '--offbudget',
+        'true',
+      ]);
+
+      expect(api.updateAccount).toHaveBeenCalledWith('acct-1', {
+        name: 'X',
+        offbudget: true,
+      });
+    });
+
+    it('passes offbudget false', async () => {
+      await run([
+        'accounts',
+        'update',
+        'acct-1',
+        '--name',
+        'X',
+        '--offbudget',
+        'false',
+      ]);
+
+      expect(api.updateAccount).toHaveBeenCalledWith('acct-1', {
+        name: 'X',
+        offbudget: false,
+      });
+    });
+
+    it('rejects invalid offbudget value', async () => {
+      await expect(
+        run(['accounts', 'update', 'acct-1', '--offbudget', 'yes']),
+      ).rejects.toThrow(
+        'Invalid --offbudget: "yes". Expected "true" or "false".',
+      );
+    });
+
+    it('rejects empty name', async () => {
+      await expect(
+        run(['accounts', 'update', 'acct-1', '--name', '  ']),
+      ).rejects.toThrow('Invalid --name: must be a non-empty string.');
+    });
+
+    it('rejects update with no fields', async () => {
+      await expect(run(['accounts', 'update', 'acct-1'])).rejects.toThrow(
+        'No update fields provided. Use --name or --offbudget.',
       );
     });
   });

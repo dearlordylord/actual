@@ -1,9 +1,10 @@
 import * as api from '@actual-app/api';
 import type { Command } from 'commander';
 
+import { resolveConfig } from '../config';
 import { withConnection } from '../connection';
 import { printOutput } from '../output';
-import { parseIntFlag } from '../utils';
+import { parseBoolFlag, parseIntFlag } from '../utils';
 
 export function registerBudgetsCommand(program: Command) {
   const budgets = program.command('budgets').description('Manage budgets');
@@ -29,11 +30,13 @@ export function registerBudgetsCommand(program: Command) {
     .option('--encryption-password <password>', 'Encryption password')
     .action(async (syncId: string, cmdOpts) => {
       const opts = program.opts();
+      const config = await resolveConfig(opts);
+      const password = config.encryptionPassword ?? cmdOpts.encryptionPassword;
       await withConnection(
         opts,
         async () => {
           await api.downloadBudget(syncId, {
-            password: cmdOpts.encryptionPassword,
+            password,
           });
           printOutput({ success: true, syncId }, opts.format);
         },
@@ -96,13 +99,10 @@ export function registerBudgetsCommand(program: Command) {
     .requiredOption('--category <id>', 'Category ID')
     .requiredOption('--flag <bool>', 'Enable (true) or disable (false)')
     .action(async cmdOpts => {
+      const flag = parseBoolFlag(cmdOpts.flag, '--flag');
       const opts = program.opts();
       await withConnection(opts, async () => {
-        await api.setBudgetCarryover(
-          cmdOpts.month,
-          cmdOpts.category,
-          cmdOpts.flag === 'true',
-        );
+        await api.setBudgetCarryover(cmdOpts.month, cmdOpts.category, flag);
         printOutput({ success: true }, opts.format);
       });
     });

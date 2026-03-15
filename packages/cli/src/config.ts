@@ -33,7 +33,18 @@ type ConfigFileContent = {
 };
 
 async function loadConfigFile(): Promise<ConfigFileContent> {
-  const explorer = cosmiconfig('actual');
+  const explorer = cosmiconfig('actual', {
+    searchPlaces: [
+      'package.json',
+      '.actualrc',
+      '.actualrc.json',
+      '.actualrc.yaml',
+      '.actualrc.yml',
+      'actual.config.json',
+      'actual.config.yaml',
+      'actual.config.yml',
+    ],
+  });
   const result = await explorer.search();
   if (result && !result.isEmpty) {
     return result.config as ConfigFileContent;

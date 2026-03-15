@@ -3,7 +3,7 @@ import type { Command } from 'commander';
 
 import { withConnection } from '../connection';
 import { printOutput } from '../output';
-import { parseIntFlag } from '../utils';
+import { parseBoolFlag, parseIntFlag } from '../utils';
 
 export function registerAccountsCommand(program: Command) {
   const accounts = program.command('accounts').description('Manage accounts');
@@ -44,12 +44,23 @@ export function registerAccountsCommand(program: Command) {
     .option('--offbudget <bool>', 'Set off-budget status')
     .action(async (id: string, cmdOpts) => {
       const opts = program.opts();
-      await withConnection(opts, async () => {
-        const fields: Record<string, unknown> = {};
-        if (cmdOpts.name !== undefined) fields.name = cmdOpts.name;
-        if (cmdOpts.offbudget !== undefined) {
-          fields.offbudget = cmdOpts.offbudget === 'true';
+      const fields: Record<string, unknown> = {};
+      if (cmdOpts.name !== undefined) {
+        const trimmed = cmdOpts.name.trim();
+        if (trimmed === '') {
+          throw new Error('Invalid --name: must be a non-empty string.');
         }
+        fields.name = trimmed;
+      }
+      if (cmdOpts.offbudget !== undefined) {
+        fields.offbudget = parseBoolFlag(cmdOpts.offbudget, '--offbudget');
+      }
+      if (Object.keys(fields).length === 0) {
+        throw new Error(
+          'No update fields provided. Use --name or --offbudget.',
+        );
+      }
+      await withConnection(opts, async () => {
         await api.updateAccount(id, fields);
         printOutput({ success: true, id }, opts.format);
       });

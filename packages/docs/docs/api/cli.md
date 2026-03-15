@@ -53,15 +53,15 @@ Global flags override environment variables:
 | `--budget-id <id>`        | Budget ID                                       |
 | `--data-dir <path>`       | Local data directory for cached budget data     |
 | `--format <format>`       | Output format: `json` (default), `table`, `csv` |
-| `--quiet`                 | Suppress informational messages on stderr       |
+| `--verbose`               | Show informational messages on stderr           |
 
 ### Config File
 
 The CLI uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for configuration. You can create a config file in any of these formats:
 
 - `.actualrc` (JSON or YAML)
-- `.actualrc.json`, `.actualrc.yaml`, `.actualrc.yml`, `.actualrc.js`, `.actualrc.cjs`
-- `actual.config.js`, `actual.config.cjs`
+- `.actualrc.json`, `.actualrc.yaml`, `.actualrc.yml`
+- `actual.config.json`, `actual.config.yaml`, `actual.config.yml`
 - An `"actual"` key in your `package.json`
 
 Example `.actualrc.json`:
@@ -318,7 +318,7 @@ The `--format` flag controls how results are displayed:
 - **`table`** — Human-readable table format
 - **`csv`** — Comma-separated values for spreadsheet import
 
-Use `--quiet` to suppress informational messages on stderr when piping output to other tools.
+Use `--verbose` to enable informational messages on stderr for debugging or visibility into what the CLI is doing.
 
 ## Common Workflows
 
@@ -332,9 +332,9 @@ actual budgets month 2026-03 --format table
 
 ```bash
 # Find the account ID
-actual server get-id --type accounts --name "Checking" --quiet
+actual server get-id --type accounts --name "Checking"
 # Get the balance
-actual accounts balance <id> --quiet
+actual accounts balance <id>
 ```
 
 **Export transactions to CSV:**
@@ -353,4 +353,4 @@ actual transactions add --account <id> --data '[{"date":"2026-03-14","amount":-2
 
 - Non-zero exit codes indicate an error
 - Error output is JSON on stdout: `{"error": "message"}`
-- Use `--quiet` to suppress informational stderr messages without affecting error output
+- Use `--verbose` to enable informational stderr messages for debugging

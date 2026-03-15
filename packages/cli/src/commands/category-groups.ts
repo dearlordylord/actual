@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 
 import { withConnection } from '../connection';
 import { printOutput } from '../output';
+import { parseBoolFlag } from '../utils';
 
 export function registerCategoryGroupsCommand(program: Command) {
   const groups = program
@@ -43,13 +44,16 @@ export function registerCategoryGroupsCommand(program: Command) {
     .option('--name <name>', 'New group name')
     .option('--hidden <bool>', 'Set hidden status')
     .action(async (id: string, cmdOpts) => {
+      const fields: Record<string, unknown> = {};
+      if (cmdOpts.name !== undefined) fields.name = cmdOpts.name;
+      if (cmdOpts.hidden !== undefined) {
+        fields.hidden = parseBoolFlag(cmdOpts.hidden, '--hidden');
+      }
+      if (Object.keys(fields).length === 0) {
+        throw new Error('No update fields provided. Use --name or --hidden.');
+      }
       const opts = program.opts();
       await withConnection(opts, async () => {
-        const fields: Record<string, unknown> = {};
-        if (cmdOpts.name !== undefined) fields.name = cmdOpts.name;
-        if (cmdOpts.hidden !== undefined) {
-          fields.hidden = cmdOpts.hidden === 'true';
-        }
         await api.updateCategoryGroup(id, fields);
         printOutput({ success: true, id }, opts.format);
       });
@@ -58,7 +62,10 @@ export function registerCategoryGroupsCommand(program: Command) {
   groups
     .command('delete <id>')
     .description('Delete a category group')
-    .option('--transfer-to <id>', 'Transfer categories to this category group')
+    .option(
+      '--transfer-to <id>',
+      'Transfer category groups to this category group',
+    )
     .action(async (id: string, cmdOpts) => {
       const opts = program.opts();
       await withConnection(opts, async () => {

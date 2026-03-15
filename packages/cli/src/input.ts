@@ -4,6 +4,9 @@ export function readJsonInput(cmdOpts: {
   data?: string;
   file?: string;
 }): unknown {
+  if (cmdOpts.data && cmdOpts.file) {
+    throw new Error('Cannot use both --data and --file');
+  }
   if (cmdOpts.data) {
     return JSON.parse(cmdOpts.data);
   }

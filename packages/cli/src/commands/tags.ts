@@ -43,14 +43,19 @@ export function registerTagsCommand(program: Command) {
     .option('--color <color>', 'New tag color')
     .option('--description <description>', 'New tag description')
     .action(async (id: string, cmdOpts) => {
+      const fields: Record<string, unknown> = {};
+      if (cmdOpts.tag !== undefined) fields.tag = cmdOpts.tag;
+      if (cmdOpts.color !== undefined) fields.color = cmdOpts.color;
+      if (cmdOpts.description !== undefined) {
+        fields.description = cmdOpts.description;
+      }
+      if (Object.keys(fields).length === 0) {
+        throw new Error(
+          'At least one of --tag, --color, or --description is required',
+        );
+      }
       const opts = program.opts();
       await withConnection(opts, async () => {
-        const fields: Record<string, unknown> = {};
-        if (cmdOpts.tag !== undefined) fields.tag = cmdOpts.tag;
-        if (cmdOpts.color !== undefined) fields.color = cmdOpts.color;
-        if (cmdOpts.description !== undefined) {
-          fields.description = cmdOpts.description;
-        }
         await api.updateTag(id, fields);
         printOutput({ success: true, id }, opts.format);
       });

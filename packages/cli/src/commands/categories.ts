@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 
 import { withConnection } from '../connection';
 import { printOutput } from '../output';
+import { parseBoolFlag } from '../utils';
 
 export function registerCategoriesCommand(program: Command) {
   const categories = program
@@ -45,13 +46,16 @@ export function registerCategoriesCommand(program: Command) {
     .option('--name <name>', 'New category name')
     .option('--hidden <bool>', 'Set hidden status')
     .action(async (id: string, cmdOpts) => {
+      const fields: Record<string, unknown> = {};
+      if (cmdOpts.name !== undefined) fields.name = cmdOpts.name;
+      if (cmdOpts.hidden !== undefined) {
+        fields.hidden = parseBoolFlag(cmdOpts.hidden, '--hidden');
+      }
+      if (Object.keys(fields).length === 0) {
+        throw new Error('No update fields provided. Use --name or --hidden.');
+      }
       const opts = program.opts();
       await withConnection(opts, async () => {
-        const fields: Record<string, unknown> = {};
-        if (cmdOpts.name !== undefined) fields.name = cmdOpts.name;
-        if (cmdOpts.hidden !== undefined) {
-          fields.hidden = cmdOpts.hidden === 'true';
-        }
         await api.updateCategory(id, fields);
         printOutput({ success: true, id }, opts.format);
       });

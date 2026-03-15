@@ -53,7 +53,13 @@ registerServerCommand(program);
 
 function normalizeThrownMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
-  if (typeof err === 'object' && err !== null) return JSON.stringify(err);
+  if (typeof err === 'object' && err !== null) {
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return '<non-serializable error>';
+    }
+  }
   return String(err);
 }
 
