@@ -1,5 +1,10 @@
+import * as api from '@actual-app/api';
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { printOutput } from '../output';
+
+import { registerAccountsCommand } from './accounts';
 
 vi.mock('@actual-app/api', () => ({
   getAccounts: vi.fn().mockResolvedValue([]),
@@ -18,10 +23,6 @@ vi.mock('../connection', () => ({
 vi.mock('../output', () => ({
   printOutput: vi.fn(),
 }));
-
-const api = await import('@actual-app/api');
-const { printOutput } = await import('../output');
-const { registerAccountsCommand } = await import('./accounts');
 
 function createProgram(): Command {
   const program = new Command();

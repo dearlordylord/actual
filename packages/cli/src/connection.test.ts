@@ -1,4 +1,8 @@
+import * as api from '@actual-app/api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { resolveConfig } from './config';
+import { withConnection } from './connection';
 
 vi.mock('@actual-app/api', () => ({
   init: vi.fn().mockResolvedValue(undefined),
@@ -9,10 +13,6 @@ vi.mock('@actual-app/api', () => ({
 vi.mock('./config', () => ({
   resolveConfig: vi.fn(),
 }));
-
-const api = await import('@actual-app/api');
-const { resolveConfig } = await import('./config');
-const { withConnection } = await import('./connection');
 
 function setConfig(overrides: Record<string, unknown> = {}) {
   vi.mocked(resolveConfig).mockResolvedValue({
