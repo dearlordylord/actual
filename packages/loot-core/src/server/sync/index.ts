@@ -482,20 +482,40 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
 
   IS_BATCHING = true;
   let batched: Message[] = [];
+  let error: unknown = null;
 
   try {
     await func();
   } catch (e) {
-    void errorHandler(e);
-    throw e;
+    error = e;
   } finally {
     IS_BATCHING = false;
     batched = _BATCHED;
     _BATCHED = [];
   }
 
+  // Always send accumulated messages, even if func threw. This prevents
+  // silently losing messages from successfully-completed nested batches
+  // that were coalesced into this outer batch. Without this, if the
+  // outer batch fails, all nested batch messages are discarded even
+  // though their callers received no error. This is consistent with
+  // non-batched behavior where each sendMessages call applies immediately.
   if (batched.length > 0) {
-    await _sendMessages(batched);
+    try {
+      await _sendMessages(batched);
+    } catch (sendError) {
+      // If _sendMessages fails and we already have an error from func(),
+      // preserve the original error since it's the root cause.
+      if (!error) {
+        throw sendError;
+      }
+      captureException(sendError);
+    }
+  }
+
+  if (error) {
+    void errorHandler(error as Error);
+    throw error;
   }
 }
 
