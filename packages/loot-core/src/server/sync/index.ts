@@ -482,12 +482,14 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
 
   IS_BATCHING = true;
   let batched: Message[] = [];
-  let error: unknown = null;
+  let failed = false;
+  let caughtError = new Error();
 
   try {
     await func();
   } catch (e) {
-    error = e;
+    failed = true;
+    caughtError = e instanceof Error ? e : new Error(String(e));
   } finally {
     IS_BATCHING = false;
     batched = _BATCHED;
@@ -506,16 +508,18 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
     } catch (sendError) {
       // If _sendMessages fails and we already have an error from func(),
       // preserve the original error since it's the root cause.
-      if (!error) {
-        throw sendError;
+      if (!failed) {
+        throw sendError instanceof Error
+          ? sendError
+          : new Error(String(sendError));
       }
       captureException(sendError);
     }
   }
 
-  if (error) {
-    void errorHandler(error as Error);
-    throw error;
+  if (failed) {
+    void errorHandler(caughtError);
+    throw caughtError;
   }
 }
 
