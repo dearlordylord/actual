@@ -482,12 +482,12 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
 
   IS_BATCHING = true;
   let batched: Message[] = [];
-  let error: unknown = null;
+  let error: Error | undefined;
 
   try {
     await func();
   } catch (e) {
-    error = e;
+    error = e instanceof Error ? e : new Error(String(e));
   } finally {
     IS_BATCHING = false;
     batched = _BATCHED;
@@ -516,8 +516,8 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
   }
 
   if (error) {
-    void errorHandler(error as Error);
-    // eslint-disable-next-line no-throw-literal -- rethrowing the original caught value
+    void errorHandler(error);
+    // eslint-disable-next-line no-throw-literal -- oxlint can't narrow Error|undefined
     throw error;
   }
 }
